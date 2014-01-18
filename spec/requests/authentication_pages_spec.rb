@@ -37,11 +37,23 @@ describe "Authentication" do
         describe "followed by signout" do
         	before { click_link "Sign out" }
         	it { should have_link('Sign in') }
+        	it { should_not have_link('Users', href: users_path) }
+        	it { should_not have_link('Settings', href: edit_user_path(user)) }
+        	it { should_not have_link('Profile', href: user_path(user)) }
+        	it { should_not have_link('Sign out', href: signout_path) }
       	end
       end
   end
 
   describe "authorization" do
+
+    describe "as admin user" do 
+      let(:admin) { FactoryGirl.create(:admin) }
+
+      before { sign_in admin, no_capybara: true }
+
+      specify { expect { delete user_path(admin) }.not_to change(User, :count) }
+    end
 
   	describe "as non-admin user" do
       let(:user) { FactoryGirl.create(:user) }
@@ -75,8 +87,26 @@ describe "Authentication" do
           it { should have_title('Sign in') }
         end 
       end
-    end
 
+      describe "when attempting to visit a protected page" do
+        before do
+          visit edit_user_path(user)
+          fill_in "Email",    with: user.email
+          fill_in "Password", with: user.password
+          click_button "Sign in"
+        end
+
+        describe "after signing in" do
+
+          it "should render the desired protected page" do
+            expect(page).to have_title('Edit user')
+          end
+
+          
+        end
+      end
+
+    end
 
     describe "as wrong user" do
       let(:user) { FactoryGirl.create(:user) }
@@ -101,9 +131,7 @@ describe "Authentication" do
     	describe "when attempting to visit a protected page" do
     		before do 
     			visit edit_user_path(user)
-    			fill_in "Email", with: user.email
-    			fill_in "Password", with: user.password 
-    			click_button "Sign in" 
+    			sign_in user 
     		end
 
     		describe "after signing in" do

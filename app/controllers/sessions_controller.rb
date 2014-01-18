@@ -1,4 +1,5 @@
 class SessionsController < ApplicationController
+  before_action :block_new, only: :new
   
   def new
   end
@@ -18,4 +19,11 @@ class SessionsController < ApplicationController
   	sign_out 
   	redirect_to root_url
   end
+
+  private 
+
+  def block_new
+    redirect_to(root_url) unless !signed_in? 
+  end 
+
 end
